@@ -6,29 +6,26 @@ import imageio
 import numpy as np
 from PIL import Image
 from io import BytesIO
+from gtts import gTTS
+import os
 
 st.set_page_config(page_title="AI Text-to-Image & Video Studio", layout="wide")
 
 st.title("🎬 AI Text-to-Image & Video Studio")
-st.caption("Generate Real AI Images and Dynamic Videos based on your Prompt")
+st.caption("Generate AI Images, Dynamic Videos, and AI Voice Audio based on your Prompt")
 
-# 1. Image Generation Function
+# 1. Fetch AI Image
 def generate_real_ai_image(prompt_text, style_name):
     clean_style = style_name.split()[0]
     full_prompt = f"{prompt_text}, {clean_style} style, highly detailed, 8k resolution"
     encoded_prompt = urllib.parse.quote(full_prompt)
     
     image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=450&nologo=true"
-    
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/115.0.0.0 Safari/537.36"
-    }
+    headers = {"User-Agent": "Mozilla/5.0"}
     
     try:
         response = requests.get(image_url, headers=headers, timeout=30)
         if response.status_code == 200:
-            img = Image.open(BytesIO(response.content))
-            img.verify()
             img = Image.open(BytesIO(response.content))
             return img
         else:
@@ -36,12 +33,12 @@ def generate_real_ai_image(prompt_text, style_name):
     except Exception:
         return None
 
-# 2. Dynamic Duration Video Synthesis Function
+# 2. Generate Video Animation
 def generate_real_ai_video(pil_img, duration_str, output_filename="generated_video.mp4"):
     width, height = 640, 360
     fps = 10
     
-    # Selected duration mapping to play longer video
+    # Cloud Memory Safety limits (Preventing Crash)
     duration_map = {
         "30 Seconds": 10,
         "1 Minute": 15,
@@ -63,20 +60,25 @@ def generate_real_ai_video(pil_img, duration_str, output_filename="generated_vid
     writer.close()
     return output_filename
 
+# 3. Generate Audio Voiceover (Text to Speech)
+def generate_audio_voiceover(prompt_text):
+    tts = gTTS(text=f"Generating AI scene for: {prompt_text}", lang='en')
+    audio_path = "generated_audio.mp3"
+    tts.save(audio_path)
+    return audio_path
+
 # Session state initialization
 if 'video_history' not in st.session_state:
     st.session_state.video_history = []
 if 'enhanced_prompt' not in st.session_state:
     st.session_state.enhanced_prompt = ""
 
-# Sidebar Parameters
+# Sidebar Controls
 st.sidebar.header("⚙️ Core Parameters")
 style = st.sidebar.selectbox("Visual Style", ["Cinematic 🎬", "Realistic 📸", "Anime 🎨", "3D Render 🧊", "Cyberpunk 🌆"])
 duration = st.sidebar.selectbox("Video Duration", ["30 Seconds", "1 Minute", "5 Minutes", "10 Minutes (YouTube)"])
-aspect_ratio = st.sidebar.radio("Aspect Ratio", ["16:9 (YouTube Standard)", "9:16 (Shorts/Reels)", "1:1 (Square)"])
 quality = st.sidebar.select_slider("Render Quality", options=["720p", "1080p (FHD)", "4K (Ultra HD)"])
 
-# Main Interface Tabs
 tab1, tab2 = st.tabs(["🚀 Generator Studio", "📜 Generation History"])
 
 with tab1:
@@ -95,71 +97,50 @@ with tab1:
 
     col_img, col_vid = st.columns(2)
     
-    # Text-to-Image
+    # Image Generation
     with col_img:
         if st.button("🖼️ Generate Real AI Image", type="primary", use_container_width=True):
             if not prompt.strip():
                 st.warning("Please enter a prompt first!")
             else:
                 final_prompt = st.session_state.enhanced_prompt if st.session_state.enhanced_prompt else prompt
-                
                 with st.spinner("✨ Generating AI Image..."):
                     ai_image = generate_real_ai_image(final_prompt, style)
-                    
                     if ai_image:
                         st.subheader("🖼️ Generated AI Image")
                         st.image(ai_image, use_container_width=True)
-                        
-                        buf = BytesIO()
-                        ai_image.save(buf, format="PNG")
-                        byte_im = buf.getvalue()
-                        
-                        st.download_button(
-                            label="📥 Download AI Image",
-                            data=byte_im,
-                            file_name="ai_generated_image.png",
-                            mime="image/png",
-                            use_container_width=True
-                        )
                     else:
-                        st.error("Server busy or request timed out. Please try again!")
+                        st.error("Failed to generate image. Try again!")
 
-    # Text-to-Video
+    # Video & Audio Generation
     with col_vid:
-        if st.button("🚀 Generate Real AI Video", type="primary", use_container_width=True):
+        if st.button("🚀 Generate Real AI Video + Audio", type="primary", use_container_width=True):
             if not prompt.strip():
                 st.warning("Please enter a prompt first!")
             else:
                 final_prompt = st.session_state.enhanced_prompt if st.session_state.enhanced_prompt else prompt
-                
-                with st.spinner("🎬 Synthesizing Real AI Video..."):
+                with st.spinner("🎬 Synthesizing Real AI Video & Audio Voiceover..."):
                     base_ai_img = generate_real_ai_image(final_prompt, style)
                     
                     if base_ai_img:
-                        # Passing duration argument correctly here
                         video_file = generate_real_ai_video(base_ai_img, duration)
-                        st.subheader("📺 Generated AI Video")
+                        audio_file = generate_audio_voiceover(final_prompt)
                         
+                        st.subheader("📺 Generated AI Video")
                         with open(video_file, "rb") as file:
-                            video_bytes = file.read()
-                            st.video(video_bytes)
+                            st.video(file.read())
                             
-                            st.session_state.video_history.append({
-                                "Prompt": final_prompt,
-                                "Style": style,
-                                "Duration": duration,
-                                "Quality": quality
-                            })
-                            
-                            st.download_button(
-                                label="📥 Download Generated MP4 Video",
-                                data=video_bytes,
-                                file_name="ai_generated_video.mp4",
-                                mime="video/mp4",
-                                use_container_width=True
-                            )
+                        st.subheader("🔊 AI Audio Voiceover Track")
+                        st.audio(audio_file)
+                        
+                        st.session_state.video_history.append({
+                            "Prompt": final_prompt,
+                            "Style": style,
+                            "Duration": duration,
+                            "Quality": quality
+                        })
                     else:
-                        st.error("Video generation failed. Please try again!")
+                        st.error("Video synthesis failed. Try again!")
 
 with tab2:
     st.subheader("History of Generations")
@@ -167,4 +148,4 @@ with tab2:
         df = pd.DataFrame(st.session_state.video_history)
         st.dataframe(df, use_container_width=True)
     else:
-        st.info("No generations recorded in this session yet.")
+        st.info("No generations recorded yet.")
