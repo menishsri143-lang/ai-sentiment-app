@@ -14,18 +14,30 @@ st.caption("Generates MP4 files locally rendering frame layers matching your exa
 def generate_local_mp4(prompt_text, style_name, duration_str, output_filename="generated_video.mp4"):
     width, height = 640, 360
     fps = 10
-    total_frames = 30  # Rendered frame sequence
+    
+    # Calculate duration in seconds for realistic frame rendering
+    duration_seconds_map = {
+        "30 Seconds": 5,
+        "1 Minute": 8,
+        "5 Minutes": 10,
+        "10 Minutes (YouTube)": 12
+    }
+    render_seconds = duration_seconds_map.get(duration_str, 5)
+    total_frames = fps * render_seconds
+    
+    # Clean style name removing emoji for neat video frame text
+    clean_style = style_name.split()[0]
     
     # Style-based background color definitions
     style_colors = {
-        "Cinematic 🎬": (20, 30, 50),
-        "Realistic 📸": (40, 60, 40),
-        "Anime 🎨": (90, 40, 80),
-        "3D Render 🧊": (70, 70, 80),
-        "Cyberpunk 🌆": (15, 15, 35)
+        "Cinematic 🎬": (15, 25, 45),
+        "Realistic 📸": (35, 55, 35),
+        "Anime 🎨": (85, 35, 75),
+        "3D Render 🧊": (60, 60, 75),
+        "Cyberpunk 🌆": (10, 10, 30)
     }
-    bg_color = style_colors.get(style_name, (30, 30, 30))
-    accent_color = (255, 200, 0) if "Cyberpunk" in style_name else (255, 255, 255)
+    bg_color = style_colors.get(style_name, (20, 20, 20))
+    accent_color = (0, 230, 255) if "Cyberpunk" in style_name else (255, 180, 0)
     
     writer = imageio.get_writer(output_filename, fps=fps)
     
@@ -34,18 +46,21 @@ def generate_local_mp4(prompt_text, style_name, duration_str, output_filename="g
         img = Image.new("RGB", (width, height), color=bg_color)
         draw = ImageDraw.Draw(img)
         
-        # Motion Graphics Animation
-        circle_x = int((frame_idx / total_frames) * width)
-        circle_y = int((height / 2) + (30 if frame_idx % 2 == 0 else -30))
-        draw.ellipse([circle_x - 20, circle_y - 20, circle_x + 20, circle_y + 20], fill=accent_color)
+        # Motion Graphics Dynamic Wave
+        circle_x = int((frame_idx / total_frames) * (width - 80)) + 40
+        circle_y = int((height / 2) + (25 * np.sin(frame_idx * 0.4)))
+        draw.ellipse([circle_x - 25, circle_y - 25, circle_x + 25, circle_y + 25], fill=accent_color)
         
-        # Render Prompt Overlay Text
-        display_prompt = prompt_text[:40] + "..." if len(prompt_text) > 40 else prompt_text
-        draw.text((30, 30), f"PROMPT: {display_prompt}", fill=(255, 255, 255))
-        draw.text((30, 60), f"STYLE: {style_name} | DURATION: {duration_str}", fill=(200, 200, 200))
-        draw.text((30, height - 40), f"Rendered Frame: {frame_idx + 1}/{total_frames}", fill=(150, 150, 150))
+        # Grid accent lines for modern AI aesthetic
+        draw.line([(0, height - 50), (width, height - 50)], fill=(80, 80, 100), width=1)
         
-        # Convert PIL Image to NumPy Array to prevent ValueError
+        # Render Clean Prompt Overlay Text
+        display_prompt = prompt_text[:42] + "..." if len(prompt_text) > 42 else prompt_text
+        draw.text((25, 25), f"PROMPT: {display_prompt}", fill=(255, 255, 255))
+        draw.text((25, 55), f"STYLE: {clean_style} | TARGET DURATION: {duration_str}", fill=(200, 220, 255))
+        draw.text((25, height - 35), f"AI LOCAL SYNTHESIS | Frame: {frame_idx + 1}/{total_frames}", fill=(160, 160, 180))
+        
+        # Convert PIL Image to NumPy Array
         frame_array = np.array(img)
         writer.append_data(frame_array)
         
@@ -99,8 +114,8 @@ with tab1:
             progress_bar.progress(20)
             time.sleep(0.5)
             
-            status_text.text(f"⏳ Generating frames locally for: '{final_prompt[:30]}...'")
-            progress_bar.progress(50)
+            status_text.text(f"⏳ Synthesizing frames locally for: '{final_prompt[:30]}...'")
+            progress_bar.progress(60)
             
             # Synthesize local MP4 file dynamically
             output_file = generate_local_mp4(final_prompt, style, duration)
