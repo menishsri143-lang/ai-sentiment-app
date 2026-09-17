@@ -1,6 +1,7 @@
 streamlit
 pandas
 pillow
+requests
 imageio
 imageio-ffmpeg
 numpy
