@@ -8,13 +8,14 @@ from PIL import Image
 from io import BytesIO
 from gtts import gTTS
 import os
+from moviepy.editor import VideoFileClip, AudioFileClip
 
-st.set_page_config(page_title="AI Text-to-Image & Video Studio", layout="wide")
+st.set_page_config(page_title="AI Text-to-Video Studio", layout="wide")
 
-st.title("🎬 AI Text-to-Image & Video Studio")
-st.caption("Generate AI Images, Dynamic Videos, and AI Voice Audio based on your Prompt")
+st.title("🎬 AI Prompt-to-Video & Audio Studio")
+st.caption("Generate AI Videos with Integrated Background Audio from Prompt")
 
-# 1. Fetch AI Image
+# 1. Image Generation from Prompt
 def generate_real_ai_image(prompt_text, style_name):
     clean_style = style_name.split()[0]
     full_prompt = f"{prompt_text}, {clean_style} style, highly detailed, 8k resolution"
@@ -33,12 +34,15 @@ def generate_real_ai_image(prompt_text, style_name):
     except Exception:
         return None
 
-# 2. Generate Video Animation
-def generate_real_ai_video(pil_img, duration_str, output_filename="generated_video.mp4"):
+# 2. Generate Video + Merge Audio in Background
+def generate_real_ai_video_with_audio(pil_img, prompt_text, duration_str):
+    raw_video_filename = "temp_video.mp4"
+    audio_filename = "temp_audio.mp3"
+    final_output_filename = "final_output_video.mp4"
+    
     width, height = 640, 360
     fps = 10
     
-    # Cloud Memory Safety limits (Preventing Crash)
     duration_map = {
         "30 Seconds": 10,
         "1 Minute": 15,
@@ -49,8 +53,9 @@ def generate_real_ai_video(pil_img, duration_str, output_filename="generated_vid
     seconds = duration_map.get(duration_str, 10)
     total_frames = fps * seconds
     
+    # Render Video Frames
     base_img = pil_img.resize((width, height))
-    writer = imageio.get_writer(output_filename, fps=fps)
+    writer = imageio.get_writer(raw_video_filename, fps=fps)
     
     for frame_idx in range(total_frames):
         frame = base_img.copy()
@@ -58,14 +63,28 @@ def generate_real_ai_video(pil_img, duration_str, output_filename="generated_vid
         writer.append_data(frame_array)
         
     writer.close()
-    return output_filename
-
-# 3. Generate Audio Voiceover (Text to Speech)
-def generate_audio_voiceover(prompt_text):
-    tts = gTTS(text=f"Generating AI scene for: {prompt_text}", lang='en')
-    audio_path = "generated_audio.mp3"
-    tts.save(audio_path)
-    return audio_path
+    
+    # Generate Audio Track (gTTS)
+    tts = gTTS(text=f"AI Visual Generation for: {prompt_text}", lang='en')
+    tts.save(audio_filename)
+    
+    # Merge Video and Audio into Single MP4 File using MoviePy
+    try:
+        video_clip = VideoFileClip(raw_video_filename)
+        audio_clip = AudioFileClip(audio_filename)
+        
+        # Loop audio if short, or set video duration matching audio
+        final_clip = video_clip.set_audio(audio_clip)
+        final_clip.write_videofile(final_output_filename, codec='libx264', audio_codec='aac', logger=None)
+        
+        # Close clips to free memory
+        video_clip.close()
+        audio_clip.close()
+        
+        return final_output_filename
+    except Exception as e:
+        # Fallback to raw video if merging encounters error
+        return raw_video_filename
 
 # Session state initialization
 if 'video_history' not in st.session_state:
@@ -73,16 +92,16 @@ if 'video_history' not in st.session_state:
 if 'enhanced_prompt' not in st.session_state:
     st.session_state.enhanced_prompt = ""
 
-# Sidebar Controls
+# Sidebar Parameters
 st.sidebar.header("⚙️ Core Parameters")
 style = st.sidebar.selectbox("Visual Style", ["Cinematic 🎬", "Realistic 📸", "Anime 🎨", "3D Render 🧊", "Cyberpunk 🌆"])
 duration = st.sidebar.selectbox("Video Duration", ["30 Seconds", "1 Minute", "5 Minutes", "10 Minutes (YouTube)"])
 quality = st.sidebar.select_slider("Render Quality", options=["720p", "1080p (FHD)", "4K (Ultra HD)"])
 
-tab1, tab2 = st.tabs(["🚀 Generator Studio", "📜 Generation History"])
+tab1, tab2 = st.tabs(["🚀 Video Studio", "📜 History"])
 
 with tab1:
-    prompt = st.text_area("Enter Text Prompt:", placeholder="E.g., A cute young explorer standing in a futuristic 3D city...", height=100)
+    prompt = st.text_area("Enter Video Prompt:", placeholder="E.g., A cute young explorer standing in a futuristic 3D city...", height=100)
     
     st.write("---")
     
@@ -95,43 +114,31 @@ with tab1:
     if st.session_state.enhanced_prompt:
         st.info(f"✨ **Magic Enhanced Prompt:** {st.session_state.enhanced_prompt}")
 
-    col_img, col_vid = st.columns(2)
-    
-    # Image Generation
-    with col_img:
-        if st.button("🖼️ Generate Real AI Image", type="primary", use_container_width=True):
-            if not prompt.strip():
-                st.warning("Please enter a prompt first!")
-            else:
-                final_prompt = st.session_state.enhanced_prompt if st.session_state.enhanced_prompt else prompt
-                with st.spinner("✨ Generating AI Image..."):
-                    ai_image = generate_real_ai_image(final_prompt, style)
-                    if ai_image:
-                        st.subheader("🖼️ Generated AI Image")
-                        st.image(ai_image, use_container_width=True)
-                    else:
-                        st.error("Failed to generate image. Try again!")
-
-    # Video & Audio Generation
-    with col_vid:
-        if st.button("🚀 Generate Real AI Video + Audio", type="primary", use_container_width=True):
-            if not prompt.strip():
-                st.warning("Please enter a prompt first!")
-            else:
-                final_prompt = st.session_state.enhanced_prompt if st.session_state.enhanced_prompt else prompt
-                with st.spinner("🎬 Synthesizing Real AI Video & Audio Voiceover..."):
-                    base_ai_img = generate_real_ai_image(final_prompt, style)
+    if st.button("🚀 Generate AI Video with Audio", type="primary", use_container_width=True):
+        if not prompt.strip():
+            st.warning("Please enter a text prompt first!")
+        else:
+            final_prompt = st.session_state.enhanced_prompt if st.session_state.enhanced_prompt else prompt
+            
+            with st.spinner("🎬 Generating Prompt Match Image & Merging Background Audio Track..."):
+                base_ai_img = generate_real_ai_image(final_prompt, style)
+                
+                if base_ai_img:
+                    final_video_path = generate_real_ai_video_with_audio(base_ai_img, final_prompt, duration)
                     
-                    if base_ai_img:
-                        video_file = generate_real_ai_video(base_ai_img, duration)
-                        audio_file = generate_audio_voiceover(final_prompt)
+                    st.subheader("📺 Generated Output Video (With Integrated Audio)")
+                    
+                    with open(final_video_path, "rb") as file:
+                        video_bytes = file.read()
+                        st.video(video_bytes)
                         
-                        st.subheader("📺 Generated AI Video")
-                        with open(video_file, "rb") as file:
-                            st.video(file.read())
-                            
-                        st.subheader("🔊 AI Audio Voiceover Track")
-                        st.audio(audio_file)
+                        st.download_button(
+                            label="📥 Download Video MP4 (Audio Included)",
+                            data=video_bytes,
+                            file_name="ai_generated_video_with_audio.mp4",
+                            mime="video/mp4",
+                            use_container_width=True
+                        )
                         
                         st.session_state.video_history.append({
                             "Prompt": final_prompt,
@@ -139,8 +146,8 @@ with tab1:
                             "Duration": duration,
                             "Quality": quality
                         })
-                    else:
-                        st.error("Video synthesis failed. Try again!")
+                else:
+                    st.error("Image generation for prompt failed. Please try again!")
 
 with tab2:
     st.subheader("History of Generations")
