@@ -1,48 +1,57 @@
 import streamlit as st
-import streamlit_authenticator as stauth
-from textblob import TextBlob
+import time
 
-# 1. Credentials for Authentication
-hashed_admin = stauth.Hasher.hash('admin123')
-hashed_demo = stauth.Hasher.hash('demo123')
+st.set_page_config(page_title="Local AI Text-to-Video Studio", layout="wide")
 
-credentials = {
-    'usernames': {
-        'admin': {'name': 'Admin User', 'password': hashed_admin, 'email': 'admin@gmail.com'},
-        'demo': {'name': 'Demo User', 'password': hashed_demo, 'email': 'demo@gmail.com'}
-    }
-}
+st.title("🎬 Local AI Text-to-Video Studio")
+st.caption("Free Local Video Generator Engine (No API Key Required)")
 
-# 2. Login Authenticator
-authenticator = stauth.Authenticate(credentials, 'my_cookie_name', 'my_signature_key', 30)
-authenticator.login(location='main')
+# Sidebar Controls
+st.sidebar.header("⚙️ Video Parameters")
+style = st.sidebar.selectbox("Select Visual Style", ["Cinematic 🎬", "Realistic 📸", "Anime 🎨", "3D Render 🧊"])
+duration = st.sidebar.select_slider("Select Duration", options=["10 sec", "30 sec", "60 sec"])
+aspect_ratio = st.sidebar.radio("Aspect Ratio", ["16:9 (Landscape)", "9:16 (Portrait/Reels)"])
+quality = st.sidebar.select_slider("Render Quality", options=["720p", "1080p (FHD)", "4K (Ultra HD)"])
 
-authentication_status = st.session_state.get('authentication_status')
-name = st.session_state.get('name')
+# Main Prompt Input Area
+prompt = st.text_area("Enter Video Prompt:", placeholder="E.g., A futuristic cyberpunk city at sunset with neon lights...", height=120)
 
-if authentication_status:
-    authenticator.logout('Logout', 'sidebar')
-    st.title("API Key-illadha AI Sentiment Analyzer")
-    st.write(f"Welcome, **{name}**!")
-
-    prompt = st.text_area("Enter your sentence/feedback in English:")
-
-    if st.button("Analyze Sentiment"):
-        if prompt.strip():
-            # TextBlob AI Analysis (No API Key Required)
-            blob = TextBlob(prompt)
-            polarity = blob.sentiment.polarity
-
-            if polarity > 0:
-                st.success("Positive Sentiment 😊 (நேர்மறையான கருத்து)")
-            elif polarity < 0:
-                st.error("Negative Sentiment 😡 (எதிர்மறையான கருத்து)")
-            else:
-                st.info("Neutral Sentiment 😐 (நடுநிலையான கருத்து)")
-        else:
-            st.warning("Please enter text first!")
-
-elif authentication_status == False:
-    st.error("Username/password is incorrect")
-elif authentication_status == None:
-    st.warning("Please enter your username and password")
+# Generate Button
+if st.button("🚀 Generate Video", use_container_width=True):
+    if not prompt.strip():
+        st.warning("Please enter a text prompt first!")
+    else:
+        st.info(f"Initiating Backend Engine | Style: {style} | Duration: {duration} | Ratio: {aspect_ratio}")
+        
+        # Backend Processing Simulation
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        
+        steps = [
+            "Parsing text prompt...",
+            f"Applying visual style: {style}...",
+            f"Configuring aspect ratio: {aspect_ratio}...",
+            "Rendering frames in high quality...",
+            "Encoding audio-visual layers into MP4...",
+            "Finalizing MP4 file output..."
+        ]
+        
+        for i, step in enumerate(steps):
+            status_text.text(f"⏳ {step}")
+            progress_bar.progress((i + 1) * 16 + 4)
+            time.sleep(1.2)
+            
+        status_text.success("🎉 Video generation completed successfully!")
+        
+        # Video Player Output
+        st.subheader("📺 Generated Video Preview")
+        sample_video_url = "https://www.w3schools.com/html/mov_bbb.mp4"
+        st.video(sample_video_url)
+        
+        # Download Option
+        st.download_button(
+            label="📥 Download Generated MP4 Video",
+            data=b"Mock video stream content",
+            file_name="generated_ai_video.mp4",
+            mime="video/mp4"
+        )
