@@ -5,15 +5,15 @@ import pandas as pd
 st.set_page_config(page_title="Advanced AI Text-to-Video Studio", layout="wide")
 
 st.title("🎬 Advanced AI Text-to-Video Studio")
-st.caption("Free Local Video Generator Engine with Dynamic Preview Support")
+st.caption("Free Local Video Generator Engine with Working Video Previews")
 
-# Dynamic Video Library based on Selected Style
+# Direct Working MP4 Video Links
 VIDEO_LIBRARY = {
-    "Cinematic 🎬": "https://assets.mixkit.co/videos/preview/mixkit-dramatic-sunset-over-a-mountain-range-41566-large.mp4",
-    "Realistic 📸": "https://assets.mixkit.co/videos/preview/mixkit-aerial-view-of-city-traffic-at-night-41549-large.mp4",
-    "Anime 🎨": "https://assets.mixkit.co/videos/preview/mixkit-animation-of-futuristic-devices-40615-large.mp4",
-    "3D Render 🧊": "https://assets.mixkit.co/videos/preview/mixkit-3d-render-of-a-glowing-abstract-shape-41552-large.mp4",
-    "Cyberpunk 🌆": "https://assets.mixkit.co/videos/preview/mixkit-neon-lights-in-a-futuristic-tunnel-41554-large.mp4"
+    "Cinematic 🎬": "https://www.w3schools.com/html/mov_bbb.mp4",
+    "Realistic 📸": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+    "Anime 🎨": "https://www.w3schools.com/html/movie.mp4",
+    "3D Render 🧊": "https://www.w3schools.com/html/mov_bbb.mp4",
+    "Cyberpunk 🌆": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
 }
 
 # Initialize Session State for History
@@ -69,11 +69,11 @@ with tab1:
             for i, step in enumerate(steps):
                 status_text.text(f"⏳ {step}")
                 progress_bar.progress((i + 1) * 16 + 4)
-                time.sleep(1.0)
+                time.sleep(0.8)
                 
             status_text.success("🎉 Video generation completed successfully!")
             
-            # Dynamic Video Output Display
+            # Dynamic Working Video Output
             st.subheader(f"📺 Generated Video Preview ({style})")
             selected_video_url = VIDEO_LIBRARY.get(style, VIDEO_LIBRARY["Cinematic 🎬"])
             st.video(selected_video_url)
