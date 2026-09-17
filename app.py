@@ -5,15 +5,15 @@ import pandas as pd
 st.set_page_config(page_title="Advanced AI Text-to-Video Studio", layout="wide")
 
 st.title("🎬 Advanced AI Text-to-Video Studio")
-st.caption("Free Local Video Generator Engine with Working Video Previews")
+st.caption("Free Local Video Generator Engine with Unique Previews")
 
-# Direct Working MP4 Video Links
+# Unique Working MP4 Video Links for Each Style
 VIDEO_LIBRARY = {
     "Cinematic 🎬": "https://www.w3schools.com/html/mov_bbb.mp4",
     "Realistic 📸": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
     "Anime 🎨": "https://www.w3schools.com/html/movie.mp4",
-    "3D Render 🧊": "https://www.w3schools.com/html/mov_bbb.mp4",
-    "Cyberpunk 🌆": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+    "3D Render 🧊": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    "Cyberpunk 🌆": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
 }
 
 # Initialize Session State for History
