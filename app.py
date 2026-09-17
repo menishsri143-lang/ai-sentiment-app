@@ -12,20 +12,30 @@ st.set_page_config(page_title="AI Text-to-Image & Video Studio", layout="wide")
 st.title("🎬 AI Text-to-Image & Video Studio")
 st.caption("Generate Real AI Images and Dynamic Videos based on your Prompt")
 
-# Function 1: Fetch Real AI Image from Pollinations AI
+# Function 1: Fetch Real AI Image safely with browser User-Agent
 def generate_real_ai_image(prompt_text, style_name):
-    # Combine prompt with visual style
-    full_prompt = f"{prompt_text}, {style_name} style, highly detailed, 8k resolution"
+    clean_style = style_name.split()[0]
+    full_prompt = f"{prompt_text}, {clean_style} style, highly detailed, 8k resolution"
     encoded_prompt = urllib.parse.quote(full_prompt)
     
-    # Pollinations AI Free Image Generation Endpoint
-    image_url = f"https://pollinations.ai/p/{encoded_prompt}?width=1280&height=720&seed=42"
+    # Direct Pollinations AI Image Endpoint
+    image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=450&nologo=true"
     
-    response = requests.get(image_url)
-    if response.status_code == 200:
-        img = Image.open(BytesIO(response.content))
-        return img
-    else:
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+    }
+    
+    try:
+        response = requests.get(image_url, headers=headers, timeout=30)
+        if response.status_code == 200:
+            # Safely verify and open image
+            img = Image.open(BytesIO(response.content))
+            img.verify()  # Verify image integrity
+            img = Image.open(BytesIO(response.content))  # Reopen after verify
+            return img
+        else:
+            return None
+    except Exception as e:
         return None
 
 # Function 2: Generate Video Animation from Real AI Image
@@ -34,17 +44,11 @@ def generate_real_ai_video(pil_img, output_filename="generated_video.mp4"):
     fps = 10
     total_frames = 30
     
-    # Resize base image for fast processing
     base_img = pil_img.resize((width, height))
-    
     writer = imageio.get_writer(output_filename, fps=fps)
     
-    # Create smooth pan/zoom motion effect over the real AI image
     for frame_idx in range(total_frames):
-        # Create subtle motion frame
         frame = base_img.copy()
-        
-        # Convert PIL Image to NumPy Array
         frame_array = np.array(frame)
         writer.append_data(frame_array)
         
@@ -72,7 +76,6 @@ with tab1:
     
     st.write("---")
     
-    # Prompt Enhancer
     if st.button("🪄 Enhance Prompt with Magic AI", use_container_width=True):
         if prompt.strip():
             st.session_state.enhanced_prompt = f"{prompt}, hyper-detailed, cinematic lighting, masterpiece, {style} style"
@@ -99,7 +102,6 @@ with tab1:
                         st.subheader("🖼️ Generated AI Image")
                         st.image(ai_image, use_container_width=True)
                         
-                        # Save to memory for download
                         buf = BytesIO()
                         ai_image.save(buf, format="PNG")
                         byte_im = buf.getvalue()
@@ -112,7 +114,7 @@ with tab1:
                             use_container_width=True
                         )
                     else:
-                        st.error("Failed to fetch image. Please try again!")
+                        st.error("Server busy or image request timed out. Please try again in a moment!")
 
     # 2. Text-to-Video Action
     with col_vid:
@@ -148,7 +150,7 @@ with tab1:
                                 use_container_width=True
                             )
                     else:
-                        st.error("Video synthesis failed. Please try again!")
+                        st.error("Server busy or video generation timed out. Please try again!")
 
 with tab2:
     st.subheader("History of Generations")
