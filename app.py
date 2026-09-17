@@ -1,9 +1,9 @@
 import streamlit as st
 import time
 import pandas as pd
-import os
 import imageio
-from PIL import Image, ImageDraw, ImageFont
+import numpy as np
+from PIL import Image, ImageDraw
 
 st.set_page_config(page_title="Local AI Video Synthesis Studio", layout="wide")
 
@@ -14,7 +14,7 @@ st.caption("Generates MP4 files locally rendering frame layers matching your exa
 def generate_local_mp4(prompt_text, style_name, duration_str, output_filename="generated_video.mp4"):
     width, height = 640, 360
     fps = 10
-    total_frames = 30  # Rendered sample frame sequence
+    total_frames = 30  # Rendered frame sequence
     
     # Style-based background color definitions
     style_colors = {
@@ -34,19 +34,20 @@ def generate_local_mp4(prompt_text, style_name, duration_str, output_filename="g
         img = Image.new("RGB", (width, height), color=bg_color)
         draw = ImageDraw.Draw(img)
         
-        # Render Animated Motion Circles based on Prompt Length
+        # Motion Graphics Animation
         circle_x = int((frame_idx / total_frames) * width)
         circle_y = int((height / 2) + (30 if frame_idx % 2 == 0 else -30))
         draw.ellipse([circle_x - 20, circle_y - 20, circle_x + 20, circle_y + 20], fill=accent_color)
         
-        # Render Text Prompt Overlay directly onto the Video Frame
+        # Render Prompt Overlay Text
         display_prompt = prompt_text[:40] + "..." if len(prompt_text) > 40 else prompt_text
         draw.text((30, 30), f"PROMPT: {display_prompt}", fill=(255, 255, 255))
         draw.text((30, 60), f"STYLE: {style_name} | DURATION: {duration_str}", fill=(200, 200, 200))
         draw.text((30, height - 40), f"Rendered Frame: {frame_idx + 1}/{total_frames}", fill=(150, 150, 150))
         
-        # Append frame to video writer
-        writer.append_data(imageio.core.util.Array(img))
+        # Convert PIL Image to NumPy Array to prevent ValueError
+        frame_array = np.array(img)
+        writer.append_data(frame_array)
         
     writer.close()
     return output_filename
@@ -76,7 +77,6 @@ with tab1:
     
     st.write("---")
     
-    # Button 1: Magic Prompt (Separate Line)
     if st.button("🪄 Enhance Prompt with Magic AI", use_container_width=True):
         if prompt.strip():
             st.session_state.enhanced_prompt = f"{prompt}, 8k resolution, cinematic lighting, hyper-detailed, {style} style"
@@ -86,7 +86,6 @@ with tab1:
     if st.session_state.enhanced_prompt:
         st.info(f"✨ **Magic Enhanced Prompt:** {st.session_state.enhanced_prompt}")
 
-    # Button 2: Generate Local Video (Separate Line)
     if st.button("🚀 Generate Local Video File", type="primary", use_container_width=True):
         if not prompt.strip():
             st.warning("Please enter a prompt first!")
@@ -109,7 +108,7 @@ with tab1:
             progress_bar.progress(100)
             status_text.success("🎉 Local MP4 file successfully rendered!")
             
-            # Display synthesized video file directly from disk
+            # Display synthesized video file
             st.subheader("📺 Locally Generated Video Output")
             with open(output_file, "rb") as file:
                 video_bytes = file.read()
