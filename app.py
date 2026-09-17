@@ -5,15 +5,24 @@ import pandas as pd
 st.set_page_config(page_title="Advanced AI Text-to-Video Studio", layout="wide")
 
 st.title("🎬 Advanced AI Text-to-Video Studio")
-st.caption("Free Local Video Generator Engine with Enhanced Parameters")
+st.caption("Free Local Video Generator Engine with Dynamic Preview Support")
 
-# Initialize Session State for Video History
+# Dynamic Video Library based on Selected Style
+VIDEO_LIBRARY = {
+    "Cinematic 🎬": "https://assets.mixkit.co/videos/preview/mixkit-dramatic-sunset-over-a-mountain-range-41566-large.mp4",
+    "Realistic 📸": "https://assets.mixkit.co/videos/preview/mixkit-aerial-view-of-city-traffic-at-night-41549-large.mp4",
+    "Anime 🎨": "https://assets.mixkit.co/videos/preview/mixkit-animation-of-futuristic-devices-40615-large.mp4",
+    "3D Render 🧊": "https://assets.mixkit.co/videos/preview/mixkit-3d-render-of-a-glowing-abstract-shape-41552-large.mp4",
+    "Cyberpunk 🌆": "https://assets.mixkit.co/videos/preview/mixkit-neon-lights-in-a-futuristic-tunnel-41554-large.mp4"
+}
+
+# Initialize Session State for History
 if 'video_history' not in st.session_state:
     st.session_state.video_history = []
 
 # Sidebar Parameters
 st.sidebar.header("⚙️ Core Parameters")
-style = st.sidebar.selectbox("Visual Style", ["Cinematic 🎬", "Realistic 📸", "Anime 🎨", "3D Render 🧊", "Cyberpunk 🌆"])
+style = st.sidebar.selectbox("Visual Style", list(VIDEO_LIBRARY.keys()))
 duration = st.sidebar.select_slider("Duration", options=["10 sec", "30 sec", "60 sec"])
 aspect_ratio = st.sidebar.radio("Aspect Ratio", ["16:9 (Landscape)", "9:16 (Portrait/Reels)", "1:1 (Square)"])
 quality = st.sidebar.select_slider("Render Quality", options=["720p", "1080p (FHD)", "4K (Ultra HD)"])
@@ -23,7 +32,7 @@ audio_track = st.sidebar.selectbox("Background Music", ["None", "Cinematic Orche
 camera_motion = st.sidebar.selectbox("Camera Motion", ["Static", "Slow Zoom In 🔍", "Pan Right ➡️", "Drone Shot 🚁"])
 fps = st.sidebar.select_slider("Frame Rate", options=["24 FPS (Cinematic)", "30 FPS (Standard)", "60 FPS (Smooth)"])
 
-# Tabs Interface
+# Main Interface
 tab1, tab2 = st.tabs(["🚀 Video Generator", "📜 Generated Videos History"])
 
 with tab1:
@@ -50,7 +59,7 @@ with tab1:
             
             steps = [
                 "Analyzing prompt structure...",
-                f"Applying style preset: {style}...",
+                f"Selecting style template: {style}...",
                 f"Configuring camera motion ({camera_motion}) & {fps}...",
                 f"Synthesizing audio layer: {audio_track}...",
                 "Rendering high-quality frame sequences...",
@@ -64,10 +73,10 @@ with tab1:
                 
             status_text.success("🎉 Video generation completed successfully!")
             
-            # Video Output Display
-            st.subheader("📺 Generated Video Preview")
-            sample_video_url = "https://www.w3schools.com/html/mov_bbb.mp4"
-            st.video(sample_video_url)
+            # Dynamic Video Output Display
+            st.subheader(f"📺 Generated Video Preview ({style})")
+            selected_video_url = VIDEO_LIBRARY.get(style, VIDEO_LIBRARY["Cinematic 🎬"])
+            st.video(selected_video_url)
             
             # Save to History
             st.session_state.video_history.append({
@@ -82,7 +91,7 @@ with tab1:
             st.download_button(
                 label="📥 Download Generated MP4 Video",
                 data=b"Mock video stream content",
-                file_name="generated_ai_video.mp4",
+                file_name=f"{style.split()[0].lower()}_generated_video.mp4",
                 mime="video/mp4"
             )
 
