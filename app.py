@@ -5,15 +5,15 @@ import pandas as pd
 st.set_page_config(page_title="Advanced AI Text-to-Video Studio", layout="wide")
 
 st.title("🎬 Advanced AI Text-to-Video Studio")
-st.caption("Free Local Video Generator Engine with Unique Previews")
+st.caption("Free Local Video Generator Engine with High-Compatibility Previews")
 
-# Unique Working MP4 Video Links for Each Style
+# High-Compatibility MP4 Links (No CORS Restrictions)
 VIDEO_LIBRARY = {
     "Cinematic 🎬": "https://www.w3schools.com/html/mov_bbb.mp4",
     "Realistic 📸": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
     "Anime 🎨": "https://www.w3schools.com/html/movie.mp4",
-    "3D Render 🧊": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    "Cyberpunk 🌆": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+    "3D Render 🧊": "https://upload.wikimedia.org/wikipedia/commons/2/22/Volcano_Lava_Sample.webm",
+    "Cyberpunk 🌆": "https://upload.wikimedia.org/wikipedia/commons/transcoded/f/f1/Sintel_movie_480p_subtitle.webm/Sintel_movie_480p_subtitle.webm.480p.vp9.webm"
 }
 
 # Initialize Session State for History
@@ -63,7 +63,7 @@ with tab1:
                 f"Configuring camera motion ({camera_motion}) & {fps}...",
                 f"Synthesizing audio layer: {audio_track}...",
                 "Rendering high-quality frame sequences...",
-                "Encoding final MP4 video output..."
+                "Encoding final video output..."
             ]
             
             for i, step in enumerate(steps):
@@ -89,7 +89,7 @@ with tab1:
             })
             
             st.download_button(
-                label="📥 Download Generated MP4 Video",
+                label="📥 Download Generated Video",
                 data=b"Mock video stream content",
                 file_name=f"{style.split()[0].lower()}_generated_video.mp4",
                 mime="video/mp4"
